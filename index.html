@@ -2,165 +2,205 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Plane vs Alien</title>
+<title>Game Nông Trại</title>
 
 <style>
 
 body{
 margin:0;
-background:black;
+background:#87ceeb;
 overflow:hidden;
+font-family:Arial;
 }
 
 canvas{
 display:block;
-background:#111;
+background:#6dbf4b;
 }
 
-#controls{
+#ui{
 position:fixed;
-bottom:20px;
-left:20px;
-}
-
-button{
-font-size:30px;
-padding:15px 25px;
-margin:5px;
+top:10px;
+left:10px;
+background:white;
+padding:10px;
+border-radius:10px;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<canvas id="game"></canvas>
-
-<div id="controls">
-<button id="left">◀</button>
-<button id="right">▶</button>
+<div id="ui">
+Tiền: <span id="money">20</span> 💰<br>
+Hạt giống: <span id="seeds">0</span> 🌱
 </div>
+
+<canvas id="game"></canvas>
 
 <script>
 
+// canvas
 let canvas=document.getElementById("game")
 let ctx=canvas.getContext("2d")
 
 canvas.width=window.innerWidth
 canvas.height=window.innerHeight
 
+// image
+let farmerImg=new Image()
+farmerImg.src="farmer.png"
+
+// player
 let player={
-x:120,
-y:canvas.height/2,
-hp:3
+x:200,
+y:300,
+speed:4
 }
 
-let bullets=[]
-let aliens=[]
-let items=[]
-let explosions=[]
+// sprite
+let frame=0
+let frameTimer=0
 
-let score=0
-let gameOver=false
+// money
+let money=20
+let seeds=0
 
-function spawnAlien(){
+// shop
+let shop={
+x:100,
+y:120,
+size:80
+}
 
-if(gameOver)return
+// plots
+let plots=[
 
-aliens.push({
-x:canvas.width,
-y:Math.random()*canvas.height,
-speed:3
+{x:500,y:400,state:0,grow:0},
+{x:650,y:400,state:0,grow:0}
+
+]
+
+// states
+//0 empty
+//1 planted
+//2 watered
+//3 ready
+
+// keyboard
+let keys={}
+
+document.addEventListener("keydown",(e)=>{
+keys[e.key]=true
+})
+
+document.addEventListener("keyup",(e)=>{
+keys[e.key]=false
+})
+
+// click
+canvas.addEventListener("click",()=>{
+
+// buy seeds
+if(distance(player,shop)<100){
+
+if(money>=10){
+money-=10
+seeds++
+updateUI()
+return
+}
+
+}
+
+// farm
+plots.forEach(p=>{
+
+if(distance(player,p)<90){
+
+if(p.state==0 && seeds>0){
+
+p.state=1
+seeds--
+
+}
+
+else if(p.state==3){
+
+money+=20
+p.state=0
+p.grow=0
+
+}
+
+}
+
+})
+
+updateUI()
+
+})
+
+// water
+document.addEventListener("keydown",(e)=>{
+
+if(e.key=="e"){
+
+plots.forEach(p=>{
+
+if(distance(player,p)<90 && p.state==1){
+
+p.state=2
+
+}
+
 })
 
 }
 
-setInterval(spawnAlien,2000)
-
-
-// TOUCH MOVE (lên xuống)
-canvas.addEventListener("touchmove",(e)=>{
-
-let touch=e.touches[0]
-player.y=touch.clientY
-
 })
 
-// TOUCH SHOOT
-canvas.addEventListener("touchstart",()=>{
+// distance
+function distance(a,b){
 
-if(gameOver)return
+let dx=a.x-b.x
+let dy=a.y-b.y
 
-bullets.push({
-x:player.x+40,
-y:player.y+20,
-speed:10
-})
+return Math.sqrt(dx*dx+dy*dy)
 
-})
-
-
-// BUTTON MOVE
-document.getElementById("left").onclick=()=>{
-player.x-=30
 }
 
-document.getElementById("right").onclick=()=>{
-player.x+=30
-}
-
-
-// UPDATE
+// update
 function update(){
 
-bullets.forEach(b=>{
-b.x+=b.speed
-})
+// movement
+if(keys["w"]) player.y-=player.speed
+if(keys["s"]) player.y+=player.speed
+if(keys["a"]) player.x-=player.speed
+if(keys["d"]) player.x+=player.speed
 
-aliens.forEach(a=>{
-a.x-=a.speed
-})
+// animation
+frameTimer++
 
-items.forEach(i=>{
-i.x-=2
-})
-
-bullets=bullets.filter(b=>b.x<canvas.width)
-
+if(frameTimer>10){
+frame++
+frameTimer=0
 }
 
+if(frame>8) frame=0
 
-// COLLISION
-function collision(){
+// plant growth
+plots.forEach(p=>{
 
-bullets.forEach((b,bi)=>{
+if(p.state==2){
 
-aliens.forEach((a,ai)=>{
+p.grow++
 
-if(
-b.x<a.x+40 &&
-b.x+10>a.x &&
-b.y<a.y+40 &&
-b.y+10>a.y
-){
+if(p.grow>300){
 
-aliens.splice(ai,1)
-bullets.splice(bi,1)
-
-score+=10
-
-explosions.push({
-x:a.x,
-y:a.y,
-time:30
-})
-
-if(Math.random()<0.4){
-
-items.push({
-x:a.x,
-y:a.y
-})
+p.state=3
 
 }
 
@@ -168,155 +208,86 @@ y:a.y
 
 })
 
-})
-
-
-aliens.forEach((a,ai)=>{
-
-if(
-player.x<a.x+40 &&
-player.x+40>a.x &&
-player.y<a.y+40 &&
-player.y+40>a.y
-){
-
-aliens.splice(ai,1)
-
-player.hp--
-
-explosions.push({
-x:player.x,
-y:player.y,
-time:40
-})
-
-if(player.hp<=0){
-gameOver=true
 }
 
-}
-
-})
-
-
-items.forEach((i,ii)=>{
-
-if(
-player.x<i.x+20 &&
-player.x+40>i.x &&
-player.y<i.y+20 &&
-player.y+40>i.y
-){
-
-player.hp++
-items.splice(ii,1)
-
-}
-
-})
-
-}
-
-
-// DRAW
+// draw
 function draw(){
 
 ctx.clearRect(0,0,canvas.width,canvas.height)
 
-// plane
-ctx.fillStyle="blue"
+// shop
+ctx.fillStyle="orange"
+ctx.fillRect(shop.x,shop.y,80,80)
 
-ctx.beginPath()
-ctx.moveTo(player.x+40,player.y+20)
-ctx.lineTo(player.x,player.y)
-ctx.lineTo(player.x,player.y+40)
-ctx.closePath()
-ctx.fill()
+ctx.fillStyle="black"
+ctx.fillText("SHOP",shop.x+10,shop.y+45)
 
+// plots
+plots.forEach(p=>{
 
-// bullets
-ctx.fillStyle="yellow"
+ctx.fillStyle="#8B4513"
+ctx.fillRect(p.x,p.y,80,80)
 
-bullets.forEach(b=>{
-ctx.fillRect(b.x,b.y,10,4)
-})
-
-
-// aliens
-aliens.forEach(a=>{
+// small plant
+if(p.state==1){
 
 ctx.fillStyle="green"
-
 ctx.beginPath()
-ctx.ellipse(a.x+20,a.y+20,25,10,0,0,Math.PI*2)
+ctx.arc(p.x+40,p.y+40,10,0,Math.PI*2)
 ctx.fill()
+
+}
+
+// watered
+if(p.state==2){
 
 ctx.fillStyle="lime"
-
 ctx.beginPath()
-ctx.arc(a.x+20,a.y+15,8,0,Math.PI*2)
+ctx.arc(p.x+40,p.y+40,15,0,Math.PI*2)
 ctx.fill()
 
-})
+}
 
+// big plant
+if(p.state==3){
 
-// items
-ctx.fillStyle="orange"
-
-items.forEach(i=>{
-ctx.fillRect(i.x,i.y,15,15)
-})
-
-
-// explosions
-explosions.forEach((e,ei)=>{
-
-ctx.fillStyle="red"
-
+ctx.fillStyle="darkgreen"
 ctx.beginPath()
-ctx.arc(e.x,e.y,40-e.time,0,Math.PI*2)
+ctx.arc(p.x+40,p.y+30,20,0,Math.PI*2)
 ctx.fill()
 
-e.time--
+ctx.fillRect(p.x+35,p.y+30,10,30)
 
-if(e.time<=0){
-explosions.splice(ei,1)
 }
 
 })
 
+// farmer sprite
+ctx.drawImage(
 
-// UI
-ctx.fillStyle="white"
-ctx.font="20px Arial"
+farmerImg,
+frame*64,0,
+64,64,
+player.x,
+player.y,
+64,64
 
-ctx.fillText("Score: "+score,20,30)
-ctx.fillText("HP: "+player.hp,20,60)
-
-
-if(gameOver){
-
-ctx.fillStyle="red"
-ctx.font="50px Arial"
-ctx.fillText("BẠN THUA RỒI",canvas.width/2-180,canvas.height/2)
-
-ctx.fillStyle="white"
-ctx.font="30px Arial"
-ctx.fillText("Đưa tôi 10 nghìn để chơi tiếp",canvas.width/2-220,canvas.height/2+50)
+)
 
 }
 
+// ui
+function updateUI(){
+
+document.getElementById("money").innerText=money
+document.getElementById("seeds").innerText=seeds
+
 }
 
-
-// GAME LOOP
+// game loop
 function gameLoop(){
 
-if(!gameOver){
 update()
-collision()
-}
-
 draw()
 
 requestAnimationFrame(gameLoop)
