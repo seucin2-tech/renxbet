@@ -2,134 +2,211 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RENX.BET - VERSION 2026</title>
+    <title>3D FPS Web Game - Đồi Núi & Bot</title>
     <style>
-        :root { --gold: #ffc107; --bg: #1a0000; }
-        body { margin: 0; background: #000 radial-gradient(circle, #2b0000 0%, #000 100%); color: white; font-family: sans-serif; }
-        
-        /* Menu Header */
-        header { border-bottom: 2px solid var(--gold); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.9); sticky: top; z-index: 100; }
-        .logo { font-size: 24px; font-weight: bold; color: var(--gold); text-shadow: 0 0 10px var(--gold); text-decoration: none; }
-        .menu-top a { color: white; text-decoration: none; margin-left: 15px; font-size: 14px; font-weight: bold; cursor: pointer; }
-        .menu-top a:hover { color: var(--gold); }
-        
-        .container { display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 20px; }
-        .auth-box { background: rgba(10,10,10,0.9); border: 2px solid var(--gold); padding: 30px; border-radius: 15px; width: 350px; text-align: center; box-shadow: 0 0 20px rgba(255,193,7,0.3); }
-        
-        .tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid #444; }
-        .tab { flex: 1; padding: 10px; cursor: pointer; color: #888; font-weight: bold; }
-        .tab.active { color: var(--gold); border-bottom: 3px solid var(--gold); }
-        
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #111; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; }
-        .btn-gold { background: linear-gradient(180deg, #ffde59, #ffbd59); color: black; border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 5px; font-size: 16px; }
-        
-        #game-zone { display: none; width: 100%; max-width: 1000px; margin: 0 auto; }
-        .layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
-        @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
-        
-        .box { background: #1a3c26; border: 3px solid var(--gold); border-radius: 20px; padding: 30px; text-align: center; }
-        .chat-container { background: #000; border: 2px solid var(--gold); border-radius: 15px; height: 450px; display: flex; flex-direction: column; }
-        #chat-content { flex: 1; overflow-y: auto; padding: 15px; font-size: 14px; text-align: left; }
-        .chat-input { display: flex; border-top: 1px solid #333; padding: 10px; }
-        .chat-input input { margin: 0; flex: 1; border: none; }
-        .send-btn { background: var(--gold); border: none; padding: 10px 15px; font-weight: bold; cursor: pointer; }
-
-        /* Popup Nạp Tiền */
-        #nap-tien-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 2px solid var(--gold); padding: 20px; border-radius: 10px; z-index: 1000; width: 300px; text-align: center; box-shadow: 0 0 50px #000; }
-        .close-btn { color: var(--gold); float: right; cursor: pointer; font-weight: bold; }
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        #ui {
+            position: absolute; bottom: 20px; left: 20px;
+            color: white; text-shadow: 2px 2px 4px black;
+            user-select: none;
+        }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 20px; height: 20px;
+            border: 2px solid white; border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        #health-bar {
+            width: 200px; height: 20px; background: rgba(0,0,0,0.5);
+            border: 2px solid white; margin-bottom: 5px;
+        }
+        #health-fill { width: 100%; height: 100%; background: #ff4444; transition: 0.2s; }
+        #instructions {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 20px; text-align: center;
+            cursor: pointer; z-index: 10;
+        }
     </style>
 </head>
 <body>
 
-<header>
-    <a href="#" class="logo">RENX.BET</a>
-    <div class="menu-top">
-        <a onclick="document.getElementById('nap-tien-modal').style.display='block'">NẠP TIỀN</a>
-        <a href="https://www.facebook.com/profile.php?id=61577073853260" target="_blank">FANPAGE</a>
-    </div>
-</header>
-
-<div id="user-bar" style="text-align:center; padding: 10px; color:var(--gold); font-weight:bold;"></div>
-
-<div id="nap-tien-modal">
-    <span class="close-btn" onclick="document.getElementById('nap-tien-modal').style.display='none'">[ĐÓNG]</span>
-    <h3 style="color:var(--gold)">HỆ THỐNG NẠP TIỀN</h3>
-    <hr border="1" color="#333">
-    <p>Vui lòng nạp qua facebook hoặc zalo:</p>
-    <p><b>nạp thẻ cào vào id tài khoản facebook ở dưới</p>
-    <p><b>https://www.facebook.com/profile.php?id=61577073853260
-    <p><b>zalo: 0828356553  có nhận lấy thẻ zing garena nhưng -20% giá trị thẻ
-    </p>
-    <p style="font-size:12px; color:#aaa;">Nội dung:[tên tài khoản] tôi cần nạp thẻ  mức giá thẻ [gửi số seri thẻ/mã thẻ]
-    <p><b> thẻ garena thẻ zing thì chụp ảnh nhé
-    </p>
+<div id="instructions">
+    <h1>CLICK ĐỂ CHƠI</h1>
+    <p>(W,A,S,D = Di chuyển | Chuột = Nhìn/Bắn)</p>
 </div>
 
-<div class="container">
-    <div id="auth-page" class="auth-box">
-        <div class="tabs">
-            <div id="t-login" class="tab active" onclick="document.getElementById('auth-title').innerText='ĐĂNG NHẬP'; document.getElementById('main-btn').innerText='XÁC NHẬN'; this.classList.add('active'); document.getElementById('t-reg').classList.remove('active');">ĐĂNG NHẬP</div>
-            <div id="t-reg" class="tab" onclick="document.getElementById('auth-title').innerText='ĐĂNG KÝ'; document.getElementById('main-btn').innerText='TẠO TÀI KHOẢN'; this.classList.add('active'); document.getElementById('t-login').classList.remove('active');">ĐĂNG KÝ</div>
-        </div>
-        <h2 id="auth-title" style="color: var(--gold);">ĐĂNG NHẬP</h2>
-        <input type="text" id="user" placeholder="Tên tài khoản...">
-        <input type="password" id="pass" placeholder="Mật khẩu...">
-        <button id="main-btn" class="btn-gold" onclick="
-            var u = document.getElementById('user').value;
-            var p = document.getElementById('pass').value;
-            if(!u || !p) { alert('Vui lòng nhập đủ Tài khoản và Mật khẩu!'); }
-            else { 
-                if(document.getElementById('auth-title').innerText == 'ĐĂNG KÝ') {
-                    alert('Đăng ký thành công! Số dư: 0 VNĐ. Hãy đăng nhập.');
-                    document.getElementById('t-login').click();
-                } else {
-                    document.getElementById('auth-page').style.display='none';
-                    document.getElementById('game-zone').style.display='block';
-                    document.getElementById('user-bar').innerText = 'Chào: ' + u + ' | 💰 0 VNĐ';
-                    setInterval(function(){ 
-                        var time = document.getElementById('clock').innerText.split(':');
-                        var m = parseInt(time[0]); var s = parseInt(time[1]);
-                        if(s==0){if(m==0){m=5;s=0;}else{m--;s=59;}}else{s--;}
-                        document.getElementById('clock').innerText = (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s);
-                    }, 1000);
-                }
+<div id="ui">
+    <div id="health-bar"><div id="health-fill"></div></div>
+    <div id="ammo">Đạn: 30 / ∞</div>
+</div>
+<div id="crosshair"></div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+    // --- 1. KHỞI TẠO CƠ BẢN ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb); // Bầu trời xanh
+    scene.fog = new THREE.Fog(0x87ceeb, 0, 100);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
+    scene.add(light);
+
+    // --- 2. TẠO ĐỊA HÌNH ĐỒI NÚI (TERRAIN) ---
+    const terrainSize = 200;
+    const segments = 60;
+    const geometry = new THREE.PlaneGeometry(terrainSize, terrainSize, segments, segments);
+    
+    // Làm lồi lõm địa hình
+    const vertices = geometry.attributes.position.array;
+    for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const y = vertices[i + 1];
+        // Dùng hàm Math.sin để tạo đồi núi giả lập
+        vertices[i + 2] = Math.sin(x * 0.1) * Math.cos(y * 0.1) * 3 + Math.sin(x * 0.05) * 5;
+    }
+    geometry.computeVertexNormals();
+
+    const material = new THREE.MeshPhongMaterial({ color: 0x3c6114, flatShading: true });
+    const terrain = new THREE.Mesh(geometry, material);
+    terrain.rotation.x = -Math.PI / 2;
+    scene.add(terrain);
+
+    // --- 3. HỆ THỐNG DI CHUYỂN ---
+    const controls = new PointerLockControls(camera, document.body);
+    const instructions = document.getElementById('instructions');
+
+    instructions.addEventListener('click', () => controls.lock());
+    controls.addEventListener('lock', () => instructions.style.display = 'none');
+    controls.addEventListener('unlock', () => instructions.style.display = 'block');
+
+    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+    const velocity = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+
+    document.addEventListener('keydown', (e) => {
+        switch(e.code) {
+            case 'KeyW': moveForward = true; break;
+            case 'KeyS': moveBackward = true; break;
+            case 'KeyA': moveLeft = true; break;
+            case 'KeyD': moveRight = true; break;
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        switch(e.code) {
+            case 'KeyW': moveForward = false; break;
+            case 'KeyS': moveBackward = false; break;
+            case 'KeyA': moveLeft = false; break;
+            case 'KeyD': moveRight = false; break;
+        }
+    });
+
+    // --- 4. TẠO BOT (MỤC TIÊU) ---
+    const bots = [];
+    function createBot(x, z) {
+        const botGeo = new THREE.BoxGeometry(1, 2, 1);
+        const botMat = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+        const bot = new THREE.Mesh(botGeo, botMat);
+        bot.position.set(x, 5, z);
+        bot.userData = { health: 100 };
+        scene.add(bot);
+        bots.push(bot);
+    }
+    // Tạo ngẫu nhiên 5 bot
+    for(let i=0; i<5; i++) createBot(Math.random()*40-20, Math.random()*40-20);
+
+    // --- 5. LOGIC BẮN SÚNG ---
+    let ammo = 30;
+    const raycaster = new THREE.Raycaster();
+
+    window.addEventListener('mousedown', () => {
+        if (!controls.isLocked || ammo <= 0) return;
+
+        ammo--;
+        document.getElementById('ammo').innerText = `Đạn: ${ammo} / ∞`;
+
+        // Kiểm tra va chạm tia bắn
+        raycaster.setFromCamera({x: 0, y: 0}, camera);
+        const intersects = raycaster.intersectObjects(bots);
+
+        if (intersects.length > 0) {
+            const target = intersects[0].object;
+            target.userData.health -= 50;
+            target.material.color.setHex(0xffffff); // Hiệu ứng chớp trắng khi trúng
+            setTimeout(() => target.material.color.setHex(0xff0000), 100);
+
+            if (target.userData.health <= 0) {
+                scene.remove(target);
+                bots.splice(bots.indexOf(target), 1);
             }
-        ">XÁC NHẬN</button>
-    </div>
+        }
+        
+        // Nạp đạn tự động nếu hết
+        if (ammo === 0) {
+            setTimeout(() => { ammo = 30; document.getElementById('ammo').innerText = `Đạn: ${ammo} / ∞`; }, 1500);
+        }
+    });
 
-    <div id="game-zone">
-        <div class="layout">
-            <div class="box">
-                <h1 id="clock" style="font-size: 50px; color: var(--gold);">05:00</h1>
-                <div style="font-size: 80px; margin: 20px;">🎲 🎲 🎲</div>
-                <div style="display: flex; gap: 15px; justify-content: center;">
-                    <button class="btn-gold" style="width:120px; background:#2980b9; color:white;" onclick="var c = document.getElementById('chat-content'); c.innerHTML += '<div><b style=\'color:var(--gold)\'>Hệ thống:</b> Số dư 0đ. Vui lòng Nạp tiền!</div>'; c.scrollTop = c.scrollHeight;">TÀI</button>
-                    <button class="btn-gold" style="width:120px; background:#c0392b; color:white;" onclick="var c = document.getElementById('chat-content'); c.innerHTML += '<div><b style=\'color:var(--gold)\'>Hệ thống:</b> Số dư 0đ. Vui lòng Nạp tiền!</div>'; c.scrollTop = c.scrollHeight;">XỈU</button>
-                </div>
-            </div>
+    // --- 6. VÒNG LẶP GAME (GAME LOOP) ---
+    let prevTime = performance.now();
+    function animate() {
+        requestAnimationFrame(animate);
 
-            <div class="chat-container">
-                <div style="background:var(--gold); color:black; padding:10px; font-weight:bold; text-align:center;">KÊNH CHAT TRỰC TUYẾN</div>
-                <div id="chat-content">
-                    <div><b style="color:var(--gold)">Hệ thống:</b> Chào mừng bạn đến với RENX.BET! Chúc bạn may mắn.</div>
-                </div>
-                <div class="chat-input">
-                    <input type="text" id="m-txt" placeholder="Nhập nội dung...">
-                    <button class="send-btn" onclick="
-                        var i = document.getElementById('m-txt');
-                        if(i.value){
-                            var c = document.getElementById('chat-content');
-                            c.innerHTML += '<div><b style=\'color:var(--gold)\'>Bạn:</b> ' + i.value + '</div>';
-                            i.value = '';
-                            c.scrollTop = c.scrollHeight;
-                        }
-                    ">GỬI</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+        if (controls.isLocked) {
+            const time = performance.now();
+            const delta = (time - prevTime) / 1000;
 
+            // Xử lý lực ma sát/giảm tốc
+            velocity.x -= velocity.x * 10.0 * delta;
+            velocity.z -= velocity.z * 10.0 * delta;
+
+            direction.z = Number(moveForward) - Number(moveBackward);
+            direction.x = Number(moveRight) - Number(moveLeft);
+            direction.normalize();
+
+            if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+            if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+
+            controls.moveRight(-velocity.x * delta);
+            controls.moveForward(-velocity.z * delta);
+            
+            // Giữ camera ở độ cao ổn định trên đồi núi
+            camera.position.y = 2; 
+
+            // Bot xoay tròn cho sinh động
+            bots.forEach(bot => bot.rotation.y += 0.02);
+
+            prevTime = time;
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    // Xử lý khi resize cửa sổ
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+</script>
 </body>
 </html>
