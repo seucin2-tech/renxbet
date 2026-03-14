@@ -1,212 +1,331 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>3D FPS Web Game - Đồi Núi & Bot</title>
-    <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; }
-        #ui {
-            position: absolute; bottom: 20px; left: 20px;
-            color: white; text-shadow: 2px 2px 4px black;
-            user-select: none;
-        }
-        #crosshair {
-            position: absolute; top: 50%; left: 50%;
-            width: 20px; height: 20px;
-            border: 2px solid white; border-radius: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-        }
-        #health-bar {
-            width: 200px; height: 20px; background: rgba(0,0,0,0.5);
-            border: 2px solid white; margin-bottom: 5px;
-        }
-        #health-fill { width: 100%; height: 100%; background: #ff4444; transition: 0.2s; }
-        #instructions {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8); color: white; padding: 20px; text-align: center;
-            cursor: pointer; z-index: 10;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Plane vs Alien</title>
+
+<style>
+
+body{
+margin:0;
+background:black;
+overflow:hidden;
+}
+
+canvas{
+display:block;
+background:#111;
+}
+
+#controls{
+position:fixed;
+bottom:20px;
+left:20px;
+}
+
+button{
+font-size:30px;
+padding:15px 25px;
+margin:5px;
+}
+
+</style>
 </head>
+
 <body>
 
-<div id="instructions">
-    <h1>CLICK ĐỂ CHƠI</h1>
-    <p>(W,A,S,D = Di chuyển | Chuột = Nhìn/Bắn)</p>
+<canvas id="game"></canvas>
+
+<div id="controls">
+<button id="left">◀</button>
+<button id="right">▶</button>
 </div>
 
-<div id="ui">
-    <div id="health-bar"><div id="health-fill"></div></div>
-    <div id="ammo">Đạn: 30 / ∞</div>
-</div>
-<div id="crosshair"></div>
+<script>
 
-<script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-        }
-    }
+let canvas=document.getElementById("game")
+let ctx=canvas.getContext("2d")
+
+canvas.width=window.innerWidth
+canvas.height=window.innerHeight
+
+let player={
+x:120,
+y:canvas.height/2,
+hp:3
+}
+
+let bullets=[]
+let aliens=[]
+let items=[]
+let explosions=[]
+
+let score=0
+let gameOver=false
+
+function spawnAlien(){
+
+if(gameOver)return
+
+aliens.push({
+x:canvas.width,
+y:Math.random()*canvas.height,
+speed:3
+})
+
+}
+
+setInterval(spawnAlien,2000)
+
+
+// TOUCH MOVE (lên xuống)
+canvas.addEventListener("touchmove",(e)=>{
+
+let touch=e.touches[0]
+player.y=touch.clientY
+
+})
+
+// TOUCH SHOOT
+canvas.addEventListener("touchstart",()=>{
+
+if(gameOver)return
+
+bullets.push({
+x:player.x+40,
+y:player.y+20,
+speed:10
+})
+
+})
+
+
+// BUTTON MOVE
+document.getElementById("left").onclick=()=>{
+player.x-=30
+}
+
+document.getElementById("right").onclick=()=>{
+player.x+=30
+}
+
+
+// UPDATE
+function update(){
+
+bullets.forEach(b=>{
+b.x+=b.speed
+})
+
+aliens.forEach(a=>{
+a.x-=a.speed
+})
+
+items.forEach(i=>{
+i.x-=2
+})
+
+bullets=bullets.filter(b=>b.x<canvas.width)
+
+}
+
+
+// COLLISION
+function collision(){
+
+bullets.forEach((b,bi)=>{
+
+aliens.forEach((a,ai)=>{
+
+if(
+b.x<a.x+40 &&
+b.x+10>a.x &&
+b.y<a.y+40 &&
+b.y+10>a.y
+){
+
+aliens.splice(ai,1)
+bullets.splice(bi,1)
+
+score+=10
+
+explosions.push({
+x:a.x,
+y:a.y,
+time:30
+})
+
+if(Math.random()<0.4){
+
+items.push({
+x:a.x,
+y:a.y
+})
+
+}
+
+}
+
+})
+
+})
+
+
+aliens.forEach((a,ai)=>{
+
+if(
+player.x<a.x+40 &&
+player.x+40>a.x &&
+player.y<a.y+40 &&
+player.y+40>a.y
+){
+
+aliens.splice(ai,1)
+
+player.hp--
+
+explosions.push({
+x:player.x,
+y:player.y,
+time:40
+})
+
+if(player.hp<=0){
+gameOver=true
+}
+
+}
+
+})
+
+
+items.forEach((i,ii)=>{
+
+if(
+player.x<i.x+20 &&
+player.x+40>i.x &&
+player.y<i.y+20 &&
+player.y+40>i.y
+){
+
+player.hp++
+items.splice(ii,1)
+
+}
+
+})
+
+}
+
+
+// DRAW
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+// plane
+ctx.fillStyle="blue"
+
+ctx.beginPath()
+ctx.moveTo(player.x+40,player.y+20)
+ctx.lineTo(player.x,player.y)
+ctx.lineTo(player.x,player.y+40)
+ctx.closePath()
+ctx.fill()
+
+
+// bullets
+ctx.fillStyle="yellow"
+
+bullets.forEach(b=>{
+ctx.fillRect(b.x,b.y,10,4)
+})
+
+
+// aliens
+aliens.forEach(a=>{
+
+ctx.fillStyle="green"
+
+ctx.beginPath()
+ctx.ellipse(a.x+20,a.y+20,25,10,0,0,Math.PI*2)
+ctx.fill()
+
+ctx.fillStyle="lime"
+
+ctx.beginPath()
+ctx.arc(a.x+20,a.y+15,8,0,Math.PI*2)
+ctx.fill()
+
+})
+
+
+// items
+ctx.fillStyle="orange"
+
+items.forEach(i=>{
+ctx.fillRect(i.x,i.y,15,15)
+})
+
+
+// explosions
+explosions.forEach((e,ei)=>{
+
+ctx.fillStyle="red"
+
+ctx.beginPath()
+ctx.arc(e.x,e.y,40-e.time,0,Math.PI*2)
+ctx.fill()
+
+e.time--
+
+if(e.time<=0){
+explosions.splice(ei,1)
+}
+
+})
+
+
+// UI
+ctx.fillStyle="white"
+ctx.font="20px Arial"
+
+ctx.fillText("Score: "+score,20,30)
+ctx.fillText("HP: "+player.hp,20,60)
+
+
+if(gameOver){
+
+ctx.fillStyle="red"
+ctx.font="50px Arial"
+ctx.fillText("BẠN THUA RỒI",canvas.width/2-180,canvas.height/2)
+
+ctx.fillStyle="white"
+ctx.font="30px Arial"
+ctx.fillText("Đưa tôi 10 nghìn để chơi tiếp",canvas.width/2-220,canvas.height/2+50)
+
+}
+
+}
+
+
+// GAME LOOP
+function gameLoop(){
+
+if(!gameOver){
+update()
+collision()
+}
+
+draw()
+
+requestAnimationFrame(gameLoop)
+
+}
+
+gameLoop()
+
 </script>
 
-<script type="module">
-    import * as THREE from 'three';
-    import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-
-    // --- 1. KHỞI TẠO CƠ BẢN ---
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87ceeb); // Bầu trời xanh
-    scene.fog = new THREE.Fog(0x87ceeb, 0, 100);
-
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
-    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
-    scene.add(light);
-
-    // --- 2. TẠO ĐỊA HÌNH ĐỒI NÚI (TERRAIN) ---
-    const terrainSize = 200;
-    const segments = 60;
-    const geometry = new THREE.PlaneGeometry(terrainSize, terrainSize, segments, segments);
-    
-    // Làm lồi lõm địa hình
-    const vertices = geometry.attributes.position.array;
-    for (let i = 0; i < vertices.length; i += 3) {
-        const x = vertices[i];
-        const y = vertices[i + 1];
-        // Dùng hàm Math.sin để tạo đồi núi giả lập
-        vertices[i + 2] = Math.sin(x * 0.1) * Math.cos(y * 0.1) * 3 + Math.sin(x * 0.05) * 5;
-    }
-    geometry.computeVertexNormals();
-
-    const material = new THREE.MeshPhongMaterial({ color: 0x3c6114, flatShading: true });
-    const terrain = new THREE.Mesh(geometry, material);
-    terrain.rotation.x = -Math.PI / 2;
-    scene.add(terrain);
-
-    // --- 3. HỆ THỐNG DI CHUYỂN ---
-    const controls = new PointerLockControls(camera, document.body);
-    const instructions = document.getElementById('instructions');
-
-    instructions.addEventListener('click', () => controls.lock());
-    controls.addEventListener('lock', () => instructions.style.display = 'none');
-    controls.addEventListener('unlock', () => instructions.style.display = 'block');
-
-    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-    const velocity = new THREE.Vector3();
-    const direction = new THREE.Vector3();
-
-    document.addEventListener('keydown', (e) => {
-        switch(e.code) {
-            case 'KeyW': moveForward = true; break;
-            case 'KeyS': moveBackward = true; break;
-            case 'KeyA': moveLeft = true; break;
-            case 'KeyD': moveRight = true; break;
-        }
-    });
-
-    document.addEventListener('keyup', (e) => {
-        switch(e.code) {
-            case 'KeyW': moveForward = false; break;
-            case 'KeyS': moveBackward = false; break;
-            case 'KeyA': moveLeft = false; break;
-            case 'KeyD': moveRight = false; break;
-        }
-    });
-
-    // --- 4. TẠO BOT (MỤC TIÊU) ---
-    const bots = [];
-    function createBot(x, z) {
-        const botGeo = new THREE.BoxGeometry(1, 2, 1);
-        const botMat = new THREE.MeshPhongMaterial({ color: 0xff0000 });
-        const bot = new THREE.Mesh(botGeo, botMat);
-        bot.position.set(x, 5, z);
-        bot.userData = { health: 100 };
-        scene.add(bot);
-        bots.push(bot);
-    }
-    // Tạo ngẫu nhiên 5 bot
-    for(let i=0; i<5; i++) createBot(Math.random()*40-20, Math.random()*40-20);
-
-    // --- 5. LOGIC BẮN SÚNG ---
-    let ammo = 30;
-    const raycaster = new THREE.Raycaster();
-
-    window.addEventListener('mousedown', () => {
-        if (!controls.isLocked || ammo <= 0) return;
-
-        ammo--;
-        document.getElementById('ammo').innerText = `Đạn: ${ammo} / ∞`;
-
-        // Kiểm tra va chạm tia bắn
-        raycaster.setFromCamera({x: 0, y: 0}, camera);
-        const intersects = raycaster.intersectObjects(bots);
-
-        if (intersects.length > 0) {
-            const target = intersects[0].object;
-            target.userData.health -= 50;
-            target.material.color.setHex(0xffffff); // Hiệu ứng chớp trắng khi trúng
-            setTimeout(() => target.material.color.setHex(0xff0000), 100);
-
-            if (target.userData.health <= 0) {
-                scene.remove(target);
-                bots.splice(bots.indexOf(target), 1);
-            }
-        }
-        
-        // Nạp đạn tự động nếu hết
-        if (ammo === 0) {
-            setTimeout(() => { ammo = 30; document.getElementById('ammo').innerText = `Đạn: ${ammo} / ∞`; }, 1500);
-        }
-    });
-
-    // --- 6. VÒNG LẶP GAME (GAME LOOP) ---
-    let prevTime = performance.now();
-    function animate() {
-        requestAnimationFrame(animate);
-
-        if (controls.isLocked) {
-            const time = performance.now();
-            const delta = (time - prevTime) / 1000;
-
-            // Xử lý lực ma sát/giảm tốc
-            velocity.x -= velocity.x * 10.0 * delta;
-            velocity.z -= velocity.z * 10.0 * delta;
-
-            direction.z = Number(moveForward) - Number(moveBackward);
-            direction.x = Number(moveRight) - Number(moveLeft);
-            direction.normalize();
-
-            if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
-            if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
-
-            controls.moveRight(-velocity.x * delta);
-            controls.moveForward(-velocity.z * delta);
-            
-            // Giữ camera ở độ cao ổn định trên đồi núi
-            camera.position.y = 2; 
-
-            // Bot xoay tròn cho sinh động
-            bots.forEach(bot => bot.rotation.y += 0.02);
-
-            prevTime = time;
-        }
-
-        renderer.render(scene, camera);
-    }
-
-    // Xử lý khi resize cửa sổ
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    animate();
-</script>
 </body>
 </html>
